@@ -5,3 +5,9 @@ vsc-extension-quickstart.md
 node_modules/**
 example.c3
 Makefile
+src/**
+dist/**
+tsconfig.json
+build_syntax.js
+syntaxes/c3.tmLanguage.yml
+.github/**

@@ -129,7 +129,7 @@
   "activationEvents": [
     "onLanguage:c3"
   ],
-  "main": "./src/extension.js",
+  "main": "./out/extension.js",
   "dependencies": {
     "axios": "^1.7.7",
     "decompress": "^4.2.1",
@@ -138,13 +138,20 @@
     "vscode-languageclient": "^9.0.1"
   },
   "devDependencies": {
+    "@types/decompress": "^4.2.7",
+    "@types/node": "^20.11.0",
+    "@types/semver": "^7.5.6",
+    "@types/vscode": "^1.75.0",
     "@vscode/vsce": "^3.2.1",
     "esbuild": "^0.25.10",
-    "js-yaml": "^4.1.0"
+    "js-yaml": "^4.1.0",
+    "typescript": "^5.3.3"
   },
   "scripts": {
-    "build": "node ./build_syntax.js && npm run esbuild-base -- --minify && vsce package -o vscode-c3.vsix",
-    "esbuild-base": "esbuild ./src/extension.js --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
-    "esbuild": "npm run esbuild-base -- --sourcemap"
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "build": "npm run compile && node ./build_syntax.js && npm run esbuild-base -- --minify && vsce package -o vscode-c3.vsix",
+    "esbuild-base": "esbuild ./dist/extension.js --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node",
+    "esbuild": "npm run compile && npm run esbuild-base -- --sourcemap"
   }
 }
