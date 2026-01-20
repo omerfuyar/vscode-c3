@@ -3,7 +3,7 @@ import childProcess from "child_process";
 import axios from "axios";
 import semver from "semver";
 import vscode from "vscode";
-import { downloadAndExtractArtifact } from "./utils";
+import { downloadAndExtractArtifact } from "./utils.js";
 import { LanguageClient } from 'vscode-languageclient/node';
 import { Trace } from 'vscode-jsonrpc';
 
@@ -33,12 +33,12 @@ export async function activate(context) {
     }
 
     if (lsConfig.get('diagnosticsDelay')) {
-		args.push(`--diagnostics-delay=${Number(lsConfig.get('diagnosticsDelay'))}`);
-	}
+        args.push(`--diagnostics-delay=${Number(lsConfig.get('diagnosticsDelay'))}`);
+    }
 
     if (config.get('stdlib-path')) {
-		args.push(`--stdlib-path=${config.get('stdlib-path')}`);
-	}
+        args.push(`--stdlib-path=${config.get('stdlib-path')}`);
+    }
 
     const serverOptions = {
         run: {
@@ -52,15 +52,15 @@ export async function activate(context) {
         },
     };
 
-	// Options to control the language client
-	const clientOptions = {
-		// Register the server for plain text documents
-		documentSelector: [{ scheme: "file", language: "c3" }],
-		synchronize: {
-			// Notify the server about file changes to '.c3' or '.c3i' files contained in the workspace
-			fileEvents: vscode.workspace.createFileSystemWatcher("**/*.{c3,c3i}"),
-		}
-	};
+    // Options to control the language client
+    const clientOptions = {
+        // Register the server for plain text documents
+        documentSelector: [{ scheme: "file", language: "c3" }],
+        synchronize: {
+            // Notify the server about file changes to '.c3' or '.c3i' files contained in the workspace
+            fileEvents: vscode.workspace.createFileSystemWatcher("**/*.{c3,c3i}"),
+        }
+    };
 
     if (lsConfig.get("checkForUpdate")) {
         await checkUpdate(context);
@@ -142,7 +142,7 @@ export async function installLSPVersion(context, artifact) {
         vscode.window.showErrorMessage(`No pre-build version available for your architecture/OS ${key}`);
         return
     }
-    
+
     const lsPath = await downloadAndExtractArtifact(
         "C3LSP",
         "c3lsp",

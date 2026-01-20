@@ -1,6 +1,6 @@
-import { activate as activateLS, deactivate as deactivateLS } from './lsp';
-import { setupC3 } from './setupC3';
-import { setupFormat } from './format';
+import { activate as activateLS, deactivate as deactivateLS } from './lsp.js';
+import { setupC3 } from './setupC3.js';
+import { setupFormat } from './format.js';
 
 export async function activate(context) {
     await setupC3(context);

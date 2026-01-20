@@ -52,26 +52,26 @@ export async function setupFormat(context) {
                 { language: "c3", scheme: "file" },     // files on disk
                 { language: "c3", scheme: "untitled" }, // unsaved files
             ], {
-                async provideDocumentFormattingEdits(document) {
-                    try {
-                        const input = document.getText();
-                        const result = await runClangFormat(input, document.fileName, fmtPath, fmtStyle, fmtFallbackStyle);
+            async provideDocumentFormattingEdits(document) {
+                try {
+                    const input = document.getText();
+                    const result = await runClangFormat(input, document.fileName, fmtPath, fmtStyle, fmtFallbackStyle);
 
-                        const fullRange = new vscode.Range(
-                            document.positionAt(0),
-                            document.positionAt(input.length)
-                        );
+                    const fullRange = new vscode.Range(
+                        document.positionAt(0),
+                        document.positionAt(input.length)
+                    );
 
-                        return [
-                            vscode.TextEdit.replace(fullRange, result)
-                        ];
-                    } catch (err) {
-                        vscode.window.showErrorMessage(
-                            `Error formatting c3 document: ${err.message}`
-                        );
-                        return [];
-                    }
+                    return [
+                        vscode.TextEdit.replace(fullRange, result)
+                    ];
+                } catch (err) {
+                    vscode.window.showErrorMessage(
+                        `Error formatting c3 document: ${err.message}`
+                    );
+                    return [];
                 }
+            }
         })
     );
 }
