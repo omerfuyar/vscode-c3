@@ -1,14 +1,35 @@
 import * as vscode from 'vscode';
-import { activate as activateLS, deactivate as deactivateLS } from './lsp';
-import { setupC3 } from './setupC3';
-import { setupFormat } from './format';
+import * as lsp from './lsp';
+import { info, disposeLogger, errorAndShow, initializeLogger } from './logger';
+import * as format from './format';
 
+/**
+ * Called when the extension is activated.
+ */
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
-    await setupC3(context);
-    await setupFormat(context);
-    activateLS(context);
+    initializeLogger();
+    info('Extension activating...');
+
+    try {
+        // Register the code formatter
+        format.registerFormatter(context);
+
+        // Start the Language Server
+        await lsp.startLSP(context);
+
+        info('Extension activated successfully');
+    } catch (err) {
+        const message = err instanceof Error ? err.message : 'Unknown error';
+        errorAndShow(`C3 extension activation failed: ${message}`);
+    }
 }
 
+/**
+ * Called when the extension is deactivated.
+ */
 export async function deactivate(): Promise<void> {
-    await deactivateLS();
+    info('Extension deactivating...');
+
+    await lsp.stopLSP();
+    disposeLogger();
 }

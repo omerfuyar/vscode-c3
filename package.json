@@ -148,9 +148,10 @@
     "typescript": "^5.3.3"
   },
   "scripts": {
+    "clean": "rm -rf dist/ out/",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "build": "npm run compile && node ./build_syntax.js && npm run esbuild-base -- --minify && vsce package -o vscode-c3.vsix",
+    "build": "npm run clean && npm run compile && node ./build_syntax.js && npm run esbuild-base -- --minify && vsce package -o vscode-c3.vsix",
     "esbuild-base": "esbuild ./dist/extension.js --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node",
     "esbuild": "npm run compile && npm run esbuild-base -- --sourcemap"
   }
