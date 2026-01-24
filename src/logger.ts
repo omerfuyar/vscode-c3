@@ -14,6 +14,21 @@ export function initializeLogger(): void {
     }
 }
 
+/** 
+ * Dispose the output channel.
+ */
+export function disposeLogger(): void {
+    outputChannel?.dispose();
+    outputChannel = null;
+}
+
+/**
+ * Check if the logger is initialized.
+ */
+export function isLoggerInitialized(): boolean {
+    return outputChannel !== null;
+}
+
 /**
  * Log an informational message. Must be initialized first.
  */
@@ -45,6 +60,11 @@ export function warning(message: string): void {
     log(message, 'WARNING');
 }
 
+export function warningAndShow(message: string): void {
+    warning(message);
+    vscode.window.showWarningMessage(message);
+}
+
 /**
  * Log a standard error message.
  */
@@ -65,12 +85,4 @@ export function errorAndShow(message: string, err?: unknown): void {
  */
 export function showOutput(): void {
     outputChannel?.show();
-}
-
-/**
- * Dispose the output channel (called on extension deactivate).
- */
-export function disposeLogger(): void {
-    outputChannel?.dispose();
-    outputChannel = null;
 }

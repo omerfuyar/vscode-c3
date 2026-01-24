@@ -6,7 +6,7 @@ import * as conf from '../config';
 import { platform, machine } from 'os';
 import { downloadAndExtractArtifact } from '../utils';
 import { C3_LSP_RELEASES_URL, LSP_INSTALL_FOLDER, SKIP_LSP_SETUP_KEY } from '../constants';
-import { info, error, warning, errorAndShow, infoAndShow } from '../logger';
+import * as log from '../logger';
 
 /** 
  * Map of platform keys (e.g., "x86_64-linux") to download URLs 
@@ -46,36 +46,36 @@ interface ReleaseInfo {
 export async function checkForUpdates(context: vscode.ExtensionContext): Promise<void> {
     const config = conf.getLSPConfig();
     if (!config.path) {
-        warning('No LSP path configured, prompting setup');
+        log.warning('No LSP path configured, prompting setup');
         return promptLSPSetup(context);
     }
 
     // Get current version
     const current = getInstalledVersion(config.path);
     if (!current) {
-        error('Could not determine current LSP version, reinstall prompting');
+        log.error('Could not determine current LSP version, reinstall prompting');
         return promptLSPSetup(context);
     }
 
-    info(`Current LSP version: ${current.version}`);
+    log.info(`Current LSP version: ${current.version}`);
 
     // Get latest version
     const latest = await fetchLatestVersion();
     if (!latest) {
-        error('Could not fetch latest LSP version');
+        log.error('Could not fetch latest LSP version');
         return;
     }
 
     // Compare
     if (semver.gte(current, latest.version)) {
-        info('LSP is up to date');
+        log.info('LSP is up to date');
         return;
     }
 
     // Prompt user
-    warning(`Update available: ${latest.version}`);
+    log.warning(`Update available: ${latest.version}`);
 
-    info('Prompting user to update LSP');
+    log.info('Prompting user to update LSP');
     const choice = await vscode.window.showInformationMessage(
         `C3 LSP update available: ${latest.version}`,
         'Update',
@@ -95,20 +95,20 @@ export async function promptLSPSetup(context: vscode.ExtensionContext): Promise<
 
     // Already configured - nothing to do
     if (config.path) {
-        info('LSP path already configured');
+        log.info('LSP path already configured');
         return;
     }
 
     // User previously said "Don't ask again"
     if (context.globalState.get<boolean>(SKIP_LSP_SETUP_KEY)) {
-        info('LSP setup skipped (user preference)');
+        log.info('LSP setup skipped (user preference)');
         return;
     }
 
     // Ask user what they want to do
-    info('Prompting user to set up C3 LSP');
+    log.info('Prompting user to set up C3 LSP');
     const choice = await vscode.window.showInformationMessage(
-        'C3 Language Server provides autocomplete, error checking, and more. Set it up now?',
+        'C3 Language Server provides autocomplete, log.error checking, and more. Set it up now?',
         { modal: false },  // Non-blocking dialog
         'Download And install',
         'Browse...',
@@ -117,30 +117,30 @@ export async function promptLSPSetup(context: vscode.ExtensionContext): Promise<
 
     switch (choice) {
         case 'Download And install':
-            info('User chose to download LSP');
+            log.info('User chose to download LSP');
             await installLSP(context);
             break;
 
         case 'Browse...':
-            info('User chose to browse for LSP');
+            log.info('User chose to browse for LSP');
             await promptForBinaryPath();
             break;
 
         case "Don't ask again":
-            info('User chose to skip LSP setup permanently');
+            log.info('User chose to skip LSP setup permanently');
             await context.globalState.update(SKIP_LSP_SETUP_KEY, true);
             break;
 
         default:
             // User dismissed the dialog
-            info('User dismissed LSP setup dialog');
+            log.info('User dismissed LSP setup dialog');
     }
 }
 
 async function installLSP(context: vscode.ExtensionContext): Promise<void> {
     const latest = await fetchLatestVersion();
     if (!latest) {
-        error('Could not fetch latest LSP version for installation');
+        log.error('Could not fetch latest LSP version for installation');
         return;
     }
 
@@ -151,7 +151,7 @@ async function installLSP(context: vscode.ExtensionContext): Promise<void> {
  * Show a file picker for the user to select their LSP binary.
  */
 async function promptForBinaryPath(): Promise<void> {
-    info('Prompting user to select LSP binary');
+    log.info('Prompting user to select LSP binary');
     const selected = await vscode.window.showOpenDialog({
         canSelectFiles: true,
         canSelectFolders: false,
@@ -162,22 +162,21 @@ async function promptForBinaryPath(): Promise<void> {
 
     if (selected && selected.length > 0) {
         const filePath = selected[0].fsPath;
-
         await conf.updateLSPPath(filePath);
-        info(`LSP path set to: ${filePath}`);
+        log.info(`LSP path set to: ${filePath}`);
     }
 }
 
 /**
- * Fetch the latest version info from the release server.
+ * Fetch the latest version log.info from the release server.
  */
 async function fetchLatestVersion(): Promise<ReleaseInfo | null> {
-    info('Fetching C3 LSP releases...');
+    log.info('Fetching C3 LSP releases...');
     const response = await axios.get<ReleasesResponse>(C3_LSP_RELEASES_URL);
     const releases = response.data.releases;
 
     if (!releases || !Array.isArray(releases) || releases.length === 0) {
-        error('No releases found in response');
+        log.error('No releases found in response');
         return null;
     }
 
@@ -187,11 +186,11 @@ async function fetchLatestVersion(): Promise<ReleaseInfo | null> {
     const parsed = semver.parse(latest.version);
 
     if (!parsed) {
-        error(`Invalid version format: ${latest.version}`);
+        log.error(`Invalid version format: ${latest.version}`);
         return null;
     }
 
-    info(`Latest version: ${parsed.version}`);
+    log.info(`Latest version: ${parsed.version}`);
     return { version: parsed, artifacts: latest.artifacts };
 }
 
@@ -211,13 +210,13 @@ async function downloadAndInstallVersion(context: vscode.ExtensionContext, artif
     // Determine platform key (e.g., "x86_64-linux", "arm64-darwin")
     const platformKey = `${machine()}-${platform()}`;
 
-    info(`Platform: ${platformKey}`);
+    log.info(`Platform: ${platformKey}`);
 
     const artifact = artifacts[platformKey];
 
     if (!artifact) {
         const msg = `No C3 LSP binary available for: ${platformKey}`;
-        errorAndShow(msg);
+        log.errorAndShow(msg);
         return;
     }
 
@@ -232,8 +231,8 @@ async function downloadAndInstallVersion(context: vscode.ExtensionContext, artif
         // Update settings
         await conf.updateLSPPath(binaryPath);
 
-        infoAndShow(`LSP installed at: ${binaryPath}`);
+        log.infoAndShow(`LSP installed at: ${binaryPath}`);
     } catch {
-        errorAndShow('Failed to install C3 LSP binary');
+        log.errorAndShow('Failed to install C3 LSP binary');
     }
 }

@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import * as lsp from './lsp';
 import { info, disposeLogger, errorAndShow, initializeLogger } from './logger';
 import * as format from './format';
+import { registerCommands } from './command';
 
 /**
  * Called when the extension is activated.
@@ -11,6 +12,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     info('Extension activating...');
 
     try {
+        // Register commands (restart LSP, show versions, etc.)
+        registerCommands(context);
+
         // Register the code formatter
         format.registerFormatter(context);
 

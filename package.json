@@ -47,17 +47,32 @@
         "path": "./snippets/snippets.json"
       }
     ],
+    "commands": [
+      {
+        "command": "c3.restartLSP",
+        "title": "C3: Restart Language Server"
+      },
+      {
+        "command": "c3.showVersions",
+        "title": "C3: Show Version Info"
+      }
+    ],
     "configuration": [
       {
         "type": "object",
         "title": "C3 Language Support",
         "properties": {
+          "c3.c3c-path": {
+            "type": "string",
+            "default": null,
+            "markdownDescription": "Path to c3c compiler"
+          },
           "c3.stdlib-path": {
             "type": "string",
             "default": null,
             "markdownDescription": "Path to c3c stdlib"
           },
-          "c3.lsp.enable": {
+          "c3.lsp.enabled": {
             "type": "boolean",
             "default": true,
             "description": "Enables the language server"
@@ -82,6 +97,17 @@
             "default": false,
             "markdownDescription": "Enables debug information logging"
           },
+          "c3.lsp.trace": {
+            "type": "string",
+            "enum": [
+              "off",
+              "messages",
+              "compact",
+              "verbose"
+            ],
+            "default": "compact",
+            "markdownDescription": "Trace level for the language server communication"
+          },
           "c3.lsp.log.path": {
             "type": "string",
             "default": "",
@@ -90,21 +116,27 @@
           "c3.lsp.diagnosticsDelay": {
             "type": "integer",
             "default": 2000,
+            "minimum": 0,
             "markdownDescription": "Delay calculation of code diagnostics after modifications in source. In milliseconds, default 2000 ms."
           },
-          "c3.format.enable": {
+          "c3.lsp.langVersion": {
+            "type": "string",
+            "default": null,
+            "markdownDescription": "Specifies the C3 language version to use (e.g., `1.0`, `1.1`, `2.0`). If not set, the latest stable version is used."
+          },
+          "c3.format.enabled": {
             "type": "boolean",
             "default": false,
             "markdownDescription": "**EXPERIMENTAL - USE WITH CAUTION**\\n\\n Enables formatting via `clang-format`. **WARNING:** clang-format does NOT support C3 syntax and WILL break your code structure (e.g., removing newlines, breaking C3-specific syntax). Only enable if you have a custom `.clang-format` configuration tested with C3. See [clang.llvm.org](https://clang.llvm.org/docs/ClangFormat.html)"
           },
           "c3.format.path": {
             "type": "string",
-            "default": null,
+            "default": "clang-format",
             "markdownDescription": "The path to `clang-format` binary (default: `clang-format` in `PATH`)"
           },
           "c3.format.style": {
             "type": "string",
-            "default": null,
+            "default": "Microsoft",
             "markdownDescription": "The formatting style to use (e.g., `LLVM`, `Google`, `Chromium`, `Mozilla`, `WebKit`, or a custom style in JSON/YAML format). See [clang-format style options](https://clang.llvm.org/docs/ClangFormatStyleOptions.html)"
           },
           "c3.format.fallbackStyle": {
@@ -118,8 +150,8 @@
     "configurationDefaults": {
       "[c3]": {
         "editor.tabSize": 4,
-        "editor.insertSpaces": false,
-        "editor.detectIndentation": false
+        "editor.insertSpaces": true,
+        "editor.detectIndentation": true
       },
       "files.associations": {
         "project.json": "jsonc"

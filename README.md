@@ -16,3 +16,10 @@ In vscode head over to the extensions section and click on the 3 dots. From ther
 
 ![](https://i.imgur.com/yv9C4AI.png)
 
+## Improvements
+
+- Migrated to TypeScript
+- Added some new configurations
+- Refactored codebase and new helper files
+- Added comments and documentation
+- Added Several commands to interact with the C3 Compiler
