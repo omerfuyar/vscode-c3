@@ -139,6 +139,7 @@
   },
   "devDependencies": {
     "@types/decompress": "^4.2.7",
+    "@types/js-yaml": "^4.0.9",
     "@types/node": "^20.11.0",
     "@types/semver": "^7.5.6",
     "@types/vscode": "^1.75.0",
@@ -150,9 +151,9 @@
   "scripts": {
     "clean": "rm -rf dist/ out/",
     "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./",
-    "build": "npm run clean && npm run compile && node ./build_syntax.js && npm run esbuild-base -- --minify && vsce package -o vscode-c3.vsix",
+    "build": "npm run clean && npm run compile && npm run esbuild-all-minify && node ./out/build_syntax.js && vsce package -o vscode-c3.vsix",
     "esbuild-base": "esbuild ./dist/extension.js --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node",
-    "esbuild": "npm run compile && npm run esbuild-base -- --sourcemap"
+    "esbuild-syntax": "esbuild ./dist/build_syntax.js --bundle --outfile=out/build_syntax.js --format=cjs --platform=node",
+    "esbuild-all-minify": "npm run esbuild-base -- --minify && npm run esbuild-syntax -- --minify"
   }
 }
