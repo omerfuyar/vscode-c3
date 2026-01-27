@@ -41,10 +41,10 @@ export const C3C_FLAGS = {
 } as const;
 
 export const FMT_FLAGS = {
-    IN_PLACE: '--in-place',
     CONFIG_FILE: '--config=',
     FORCE_DEFAULT: '--default',
     VERSION: '--version',
+    STDOUT: '--stdout',
 } as const;
 
 //! Defaults in package.json must match with these values

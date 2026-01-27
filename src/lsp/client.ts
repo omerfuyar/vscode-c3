@@ -1,17 +1,10 @@
 import * as vscode from 'vscode';
-import {
-    LanguageClient,
-    LanguageClientOptions,
-    Executable,
-    ServerOptions,
-    RevealOutputChannelOn
-} from 'vscode-languageclient/node';
+import { LanguageClient, LanguageClientOptions, Executable, ServerOptions, RevealOutputChannelOn } from 'vscode-languageclient/node';
 import { getLSPConfig, getC3Config, LSPConfig, C3Config } from '../config';
 import { C3_LANGUAGE_ID, C3_FILE_EXTENSIONS, LSP_CLIENT_NAME, LSP_CLIENT_ID, LSP_FLAGS } from '../constants';
 import { info, error } from '../logger';
-import { installOrUpdateLSP } from './installer';
+import { updateOrInstallLSP } from './installer';
 
-// The active language client instance (null when not running)
 let client: LanguageClient | null = null;
 
 /**
@@ -26,14 +19,12 @@ export async function startLSP(context: vscode.ExtensionContext): Promise<void> 
     const lspConfig = getLSPConfig();
     const c3Config = getC3Config();
 
-    // LSP disabled by user
     if (!lspConfig.enabled) {
         info('LSP is disabled in settings');
         return;
     }
 
-    // Check for updates before starting
-    await installOrUpdateLSP(context);
+    await updateOrInstallLSP(context.globalStorageUri);
 
     const args = buildServerArgs(lspConfig, c3Config);
     info(`Starting LSP from: ${lspConfig.path}`);
@@ -97,29 +88,23 @@ export function getClient(): LanguageClient | null {
  * Create and start the language client.
  */
 async function createAndStartClient(lspConfig: LSPConfig, args: string[]): Promise<void> {
-    // How to start the server process
     const serverExecutable: Executable = {
         command: lspConfig.path!,
         args: args
     };
 
-    // Server launch options
     const serverOptions: ServerOptions = {
         run: serverExecutable,
         debug: serverExecutable
     };
 
-    // How VS Code should communicate with the server
     const clientOptions: LanguageClientOptions = {
-        // Document types the server handles
         documentSelector: [
             { scheme: 'file', language: C3_LANGUAGE_ID },
-            { scheme: 'untitled', language: C3_LANGUAGE_ID },  // New unsaved files
+            { scheme: 'untitled', language: C3_LANGUAGE_ID },
         ],
 
-        // Sync settings
         synchronize: {
-            // Watch for changes to C3 files
             fileEvents: vscode.workspace.createFileSystemWatcher(
                 `**/*.{${C3_FILE_EXTENSIONS.join(',')}}`
             ),
@@ -171,7 +156,6 @@ async function createAndStartClient(lspConfig: LSPConfig, args: string[]): Promi
 
     client.setTrace(lspConfig.trace);
 
-    // Start and connect
     await client.start();
 }
 

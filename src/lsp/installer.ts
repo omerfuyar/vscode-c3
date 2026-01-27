@@ -5,7 +5,7 @@ import * as vscode from 'vscode';
 import * as conf from '../config';
 import { platform, machine } from 'os';
 import { downloadAndExtractArtifact } from '../utils';
-import { C3_LSP_RELEASES_URL, LSP_INSTALL_FOLDER } from '../constants';
+import { C3_LSP_RELEASES_URL, LSP_FLAGS, LSP_INSTALL_FOLDER } from '../constants';
 import * as log from '../logger';
 
 /** 
@@ -43,37 +43,33 @@ interface ReleaseInfo {
 /**
  * Check if a newer version is available or is it installed. Prompt user to update or setup if so.
  */
-export async function installOrUpdateLSP(context: vscode.ExtensionContext): Promise<void> {
+export async function updateOrInstallLSP(directory: vscode.Uri): Promise<void> {
     const config = conf.getLSPConfig();
 
     if (!config.path) {
         log.warning('No LSP path configured, prompting setup');
-        return promptLSPSetup(context);
+        return promptLSPSetup(directory);
     }
 
-    // Get current version
     const current = getInstalledVersion(config.path);
     if (!current) {
         log.error('Could not determine current LSP version, reinstall prompting');
-        return promptLSPSetup(context);
+        return promptLSPSetup(directory);
     }
 
     log.info(`Current LSP version: ${current.version}`);
 
-    // Get latest version
     const latest = await getLatestReleaseInfo();
     if (!latest) {
         log.error('Could not fetch latest LSP version');
         return;
     }
 
-    // Compare
     if (semver.gte(current, latest.version)) {
         log.info('LSP is up to date');
         return;
     }
 
-    // Prompt user
     log.warning(`Update available: ${latest.version}`);
 
     log.info('Prompting user to update LSP');
@@ -84,19 +80,18 @@ export async function installOrUpdateLSP(context: vscode.ExtensionContext): Prom
     );
 
     if (choice === 'Update') {
-        await downloadAndInstallVersion(context, latest.artifacts);
+        await downloadAndInstallVersion(directory, latest.artifacts);
     }
 }
 
 /**
  * Setup the LSP if it does not exist.
  */
-async function promptLSPSetup(context: vscode.ExtensionContext): Promise<void> {
-    // Ask user what they want to do
+async function promptLSPSetup(directory: vscode.Uri): Promise<void> {
     log.info('Prompting user to set up C3 LSP');
     const choice = await vscode.window.showInformationMessage(
         'C3 Language Server provides autocomplete, log.error checking, and more. Set it up now?',
-        { modal: false },  // Non-blocking dialog
+        { modal: false },
         'Download And install',
         'Browse...',
         "Skip"
@@ -105,7 +100,7 @@ async function promptLSPSetup(context: vscode.ExtensionContext): Promise<void> {
     switch (choice) {
         case 'Download And install':
             log.info('User chose to download LSP');
-            await installLSP(context);
+            await installLSP(directory);
             break;
 
         case 'Browse...':
@@ -118,19 +113,18 @@ async function promptLSPSetup(context: vscode.ExtensionContext): Promise<void> {
             break;
 
         default:
-            // User dismissed the dialog
             log.info('User dismissed LSP setup dialog');
     }
 }
 
-async function installLSP(context: vscode.ExtensionContext): Promise<void> {
+async function installLSP(directory: vscode.Uri): Promise<void> {
     const latest = await getLatestReleaseInfo();
     if (!latest) {
         log.error('Could not fetch latest LSP version for installation');
         return;
     }
 
-    await downloadAndInstallVersion(context, latest.artifacts);
+    await downloadAndInstallVersion(directory, latest.artifacts);
 }
 
 /**
@@ -166,7 +160,6 @@ async function getLatestReleaseInfo(): Promise<ReleaseInfo | null> {
         return null;
     }
 
-    // Sort by version (descending) and take the first
     const latest = releases.sort((a, b) => semver.rcompare(a.version, b.version)).at(0)!;
 
     const parsed = semver.parse(latest.version);
@@ -184,7 +177,7 @@ async function getLatestReleaseInfo(): Promise<ReleaseInfo | null> {
  * Get the version of an installed LSP binary.
  */
 function getInstalledVersion(binaryPath: string): semver.SemVer | null {
-    const output = childProcess.execFileSync(binaryPath, ['--version']);
+    const output = childProcess.execFileSync(binaryPath, [LSP_FLAGS.VERSION]);
     const versionStr = output.toString('utf8').trim();
     return semver.parse(versionStr);
 }
@@ -192,8 +185,7 @@ function getInstalledVersion(binaryPath: string): semver.SemVer | null {
 /**
  * Download and install the LSP binary for the current platform.
  */
-async function downloadAndInstallVersion(context: vscode.ExtensionContext, artifacts: ArtifactMap): Promise<void> {
-    // Determine platform key (e.g., "x86_64-linux", "arm64-darwin")
+async function downloadAndInstallVersion(directory: vscode.Uri, artifacts: ArtifactMap): Promise<void> {
     const platformKey = `${machine()}-${platform()}`;
 
     log.info(`Platform: ${platformKey}`);
@@ -206,15 +198,13 @@ async function downloadAndInstallVersion(context: vscode.ExtensionContext, artif
         return;
     }
 
-    // Download and extract
     const installDir = vscode.Uri.joinPath(
-        context.globalStorageUri,
+        directory,
         LSP_INSTALL_FOLDER
     );
 
     try {
         const binaryPath = await downloadAndExtractArtifact('C3LSP', installDir, artifact.url);
-        // Update settings
         await conf.updateLSPPath(binaryPath);
 
         log.infoAndShow(`LSP installed at: ${binaryPath}`);

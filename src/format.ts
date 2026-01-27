@@ -10,25 +10,23 @@ import { errorAndShow } from './logger';
 export function registerFormatter(context: vscode.ExtensionContext): void {
     const provider = vscode.languages.registerDocumentFormattingEditProvider(
         [
-            { language: C3_LANGUAGE_ID, scheme: 'file' },     // Saved files
-            { language: C3_LANGUAGE_ID, scheme: 'untitled' }, // New unsaved files
+            { language: C3_LANGUAGE_ID, scheme: 'file' },
+            { language: C3_LANGUAGE_ID, scheme: 'untitled' },
         ],
         {
             provideDocumentFormattingEdits: formatDocument
         }
     );
 
-    // Register for cleanup when extension deactivates
     context.subscriptions.push(provider);
 
-
+    UpdateOrInstallFMT(context.globalStorageUri);
 }
 
 /**
  * Format an entire document. Registers as a DocumentFormattingEditProvider.
  */
 async function formatDocument(document: vscode.TextDocument): Promise<vscode.TextEdit[]> {
-    // Read config fresh (not cached) so user changes apply immediately
     const config = getFMTConfig();
 
     if (!config.enabled) {
@@ -36,25 +34,19 @@ async function formatDocument(document: vscode.TextDocument): Promise<vscode.Tex
     }
 
     try {
-        const originalText = document.getText();
-
         const formattedText = await runC3FMT(
-            originalText,
-            document.fileName,
-            config.path,
-            config.style,
-            config.fallbackStyle);
+            document.uri.fsPath,
+            config.path!,
+            config.configPath);
 
-        // Create an edit that replaces the entire document
         const entireDocument = new vscode.Range(
             document.positionAt(0),
-            document.positionAt(originalText.length)
+            document.positionAt(document.getText().length)
         );
 
         return [vscode.TextEdit.replace(entireDocument, formattedText)];
     } catch (err) {
-        const message = err instanceof Error ? err.message : 'Unknown error';
-        errorAndShow(`Format failed: ${message}`);
+        errorAndShow(`Format failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
         return [];
     }
 }
@@ -64,7 +56,6 @@ async function formatDocument(document: vscode.TextDocument): Promise<vscode.Tex
  */
 function runC3FMT(fileName: string, path: string, configPath: string | undefined): Promise<string> {
     return new Promise((resolve, reject) => {
-        // Build command-line arguments
         const args: string[] = [];
 
         if (configPath) {
@@ -73,16 +64,56 @@ function runC3FMT(fileName: string, path: string, configPath: string | undefined
             args.push(FMT_FLAGS.FORCE_DEFAULT);
         }
 
-        args.push(FMT_FLAGS.IN_PLACE);
+        args.push(FMT_FLAGS.STDOUT);
+        args.push(fileName);
 
-
-
-        // Spawn the process
         const proc: ChildProcess = spawn(path, args);
+
+        let stdout = '';
+        let stderr = '';
+
+        proc.stdout?.on('data', (chunk: Buffer) => {
+            stdout += chunk.toString();
+        });
+
+        proc.stderr?.on('data', (chunk: Buffer) => {
+            stderr += chunk.toString();
+        });
+
+        proc.on('error', (err) => {
+            reject(new Error(`Failed to run formatter: ${err.message}`));
+        });
+
+        proc.on('close', (exitCode) => {
+            if (exitCode !== 0) {
+                reject(new Error(`Formatter exited with code ${exitCode}: ${stderr}`));
+            } else {
+                resolve(stdout);
+            }
+        });
     });
 }
 
-async function installOrUpdateFMT(context: vscode.ExtensionContext): Promise<void> {
+async function UpdateOrInstallFMT(directory: vscode.Uri): Promise<void> {
     const config = getFMTConfig();
 
+    if (!config.path) {
+        const choice = await vscode.window.showInformationMessage(
+            'C3FMT is not installed. Would you like to install it now?',
+            'Install',
+            'Skip'
+        );
+
+        if (choice === 'Install') {
+            await installFMT(directory);
+        }
+    }
+}
+
+async function installFMT(directory: vscode.Uri): Promise<void> {
+    // get current and new version
+
+    // compare
+    // download if needed
+    // extract
 }
