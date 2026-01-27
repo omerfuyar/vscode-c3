@@ -1,5 +1,5 @@
 import axios from 'axios';
-import * as childProcess from 'child_process';
+import * as cp from 'child_process';
 import * as semver from 'semver';
 import * as vscode from 'vscode';
 import * as conf from '../config';
@@ -51,7 +51,7 @@ export async function updateOrInstallLSP(directory: vscode.Uri): Promise<void> {
         return promptLSPSetup(directory);
     }
 
-    const current = getInstalledVersion(config.path);
+    const current = getInstalledVersionInfo(config.path);
     if (!current) {
         log.error('Could not determine current LSP version, reinstall prompting');
         return promptLSPSetup(directory);
@@ -59,7 +59,7 @@ export async function updateOrInstallLSP(directory: vscode.Uri): Promise<void> {
 
     log.info(`Current LSP version: ${current.version}`);
 
-    const latest = await getLatestReleaseInfo();
+    const latest = await getLatestVersionInfo();
     if (!latest) {
         log.error('Could not fetch latest LSP version');
         return;
@@ -118,7 +118,7 @@ async function promptLSPSetup(directory: vscode.Uri): Promise<void> {
 }
 
 async function installLSP(directory: vscode.Uri): Promise<void> {
-    const latest = await getLatestReleaseInfo();
+    const latest = await getLatestVersionInfo();
     if (!latest) {
         log.error('Could not fetch latest LSP version for installation');
         return;
@@ -148,9 +148,9 @@ async function promptForBinaryPath(): Promise<void> {
 }
 
 /**
- * Fetch the latest version log.info from the release server.
+ * Fetch the latest version.
  */
-async function getLatestReleaseInfo(): Promise<ReleaseInfo | null> {
+async function getLatestVersionInfo(): Promise<ReleaseInfo | null> {
     log.info('Fetching C3 LSP releases...');
     const response = await axios.get<ReleasesResponse>(C3_LSP_RELEASES_URL);
     const releases = response.data.releases;
@@ -176,8 +176,8 @@ async function getLatestReleaseInfo(): Promise<ReleaseInfo | null> {
 /**
  * Get the version of an installed LSP binary.
  */
-function getInstalledVersion(binaryPath: string): semver.SemVer | null {
-    const output = childProcess.execFileSync(binaryPath, [LSP_FLAGS.VERSION]);
+function getInstalledVersionInfo(binaryPath: string): semver.SemVer | null {
+    const output = cp.execFileSync(binaryPath, [LSP_FLAGS.VERSION]);
     const versionStr = output.toString('utf8').trim();
     return semver.parse(versionStr);
 }
