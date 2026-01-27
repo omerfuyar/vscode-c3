@@ -65,7 +65,7 @@
           "c3.c3c-path": {
             "type": "string",
             "default": null,
-            "markdownDescription": "Path to c3c compiler"
+            "markdownDescription": "Path to c3c compiler binary"
           },
           "c3.stdlib-path": {
             "type": "string",
@@ -81,11 +81,6 @@
             "type": "string",
             "default": null,
             "markdownDescription": "The path to **c3-lsp** binary"
-          },
-          "c3.lsp.checkForUpdate": {
-            "type": "boolean",
-            "description": "Whether to automatically check for new versions",
-            "default": true
           },
           "c3.lsp.sendCrashReports": {
             "type": "boolean",
@@ -127,22 +122,17 @@
           "c3.format.enabled": {
             "type": "boolean",
             "default": false,
-            "markdownDescription": "**EXPERIMENTAL - USE WITH CAUTION**\\n\\n Enables formatting via `clang-format`. **WARNING:** clang-format does NOT support C3 syntax and WILL break your code structure (e.g., removing newlines, breaking C3-specific syntax). Only enable if you have a custom `.clang-format` configuration tested with C3. See [clang.llvm.org](https://clang.llvm.org/docs/ClangFormat.html)"
+            "markdownDeprecation": "Uses [c3fmt](https://github.com/lmichaudel/c3fmt) for formatting C3 code."
           },
           "c3.format.path": {
             "type": "string",
-            "default": "clang-format",
-            "markdownDescription": "The path to `clang-format` binary (default: `clang-format` in `PATH`)"
+            "default": null,
+            "markdownDescription": "The path to c3fmt binary."
           },
-          "c3.format.style": {
+          "c3.format.configPath": {
             "type": "string",
-            "default": "Microsoft",
-            "markdownDescription": "The formatting style to use (e.g., `LLVM`, `Google`, `Chromium`, `Mozilla`, `WebKit`, or a custom style in JSON/YAML format). See [clang-format style options](https://clang.llvm.org/docs/ClangFormatStyleOptions.html)"
-          },
-          "c3.format.fallbackStyle": {
-            "type": "string",
-            "default": "LLVM",
-            "markdownDescription": "The fallback style to use when no `.clang-format` file is found (default: `LLVM`)"
+            "default": null,
+            "markdownDescription": "The path to .c3fmt configuration file."
           }
         }
       }

@@ -9,7 +9,7 @@ import {
 import { getLSPConfig, getC3Config, LSPConfig, C3Config } from '../config';
 import { C3_LANGUAGE_ID, C3_FILE_EXTENSIONS, LSP_CLIENT_NAME, LSP_CLIENT_ID, LSP_FLAGS } from '../constants';
 import { info, error } from '../logger';
-import { checkForUpdates } from './installer';
+import { installOrUpdateLSP } from './installer';
 
 // The active language client instance (null when not running)
 let client: LanguageClient | null = null;
@@ -33,9 +33,7 @@ export async function startLSP(context: vscode.ExtensionContext): Promise<void> 
     }
 
     // Check for updates before starting
-    if (lspConfig.checkForUpdate) {
-        await checkForUpdates(context);
-    }
+    await installOrUpdateLSP(context);
 
     const args = buildServerArgs(lspConfig, c3Config);
     info(`Starting LSP from: ${lspConfig.path}`);
@@ -143,6 +141,23 @@ async function createAndStartClient(lspConfig: LSPConfig, args: string[]): Promi
                 }
 
                 return result;
+            },
+            provideDeclaration: async (document, position, token, next) => {
+                info(`Go to declaration requested at ${document.uri.fsPath}:${position.line + 1}:${position.character + 1}`);
+
+                const result = await next(document, position, token);
+
+                if (!result) {
+                    error('No definition found');
+                } else {
+                    info(`Definition found: ${JSON.stringify(result)}`);
+                }
+
+                return result;
+            },
+            provideHover: async (document, position, token, next) => {
+                info(`Hover requested at ${document.uri.fsPath}:${position.line + 1}:${position.character + 1}`);
+                return await next(document, position, token);
             },
         },
     };

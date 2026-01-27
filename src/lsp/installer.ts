@@ -5,7 +5,7 @@ import * as vscode from 'vscode';
 import * as conf from '../config';
 import { platform, machine } from 'os';
 import { downloadAndExtractArtifact } from '../utils';
-import { C3_LSP_RELEASES_URL, LSP_INSTALL_FOLDER, SKIP_LSP_SETUP_KEY } from '../constants';
+import { C3_LSP_RELEASES_URL, LSP_INSTALL_FOLDER } from '../constants';
 import * as log from '../logger';
 
 /** 
@@ -43,8 +43,9 @@ interface ReleaseInfo {
 /**
  * Check if a newer version is available or is it installed. Prompt user to update or setup if so.
  */
-export async function checkForUpdates(context: vscode.ExtensionContext): Promise<void> {
+export async function installOrUpdateLSP(context: vscode.ExtensionContext): Promise<void> {
     const config = conf.getLSPConfig();
+
     if (!config.path) {
         log.warning('No LSP path configured, prompting setup');
         return promptLSPSetup(context);
@@ -60,7 +61,7 @@ export async function checkForUpdates(context: vscode.ExtensionContext): Promise
     log.info(`Current LSP version: ${current.version}`);
 
     // Get latest version
-    const latest = await fetchLatestVersion();
+    const latest = await getLatestReleaseInfo();
     if (!latest) {
         log.error('Could not fetch latest LSP version');
         return;
@@ -90,21 +91,7 @@ export async function checkForUpdates(context: vscode.ExtensionContext): Promise
 /**
  * Setup the LSP if it does not exist.
  */
-export async function promptLSPSetup(context: vscode.ExtensionContext): Promise<void> {
-    const config = conf.getLSPConfig();
-
-    // Already configured - nothing to do
-    if (config.path) {
-        log.info('LSP path already configured');
-        return;
-    }
-
-    // User previously said "Don't ask again"
-    if (context.globalState.get<boolean>(SKIP_LSP_SETUP_KEY)) {
-        log.info('LSP setup skipped (user preference)');
-        return;
-    }
-
+async function promptLSPSetup(context: vscode.ExtensionContext): Promise<void> {
     // Ask user what they want to do
     log.info('Prompting user to set up C3 LSP');
     const choice = await vscode.window.showInformationMessage(
@@ -112,7 +99,7 @@ export async function promptLSPSetup(context: vscode.ExtensionContext): Promise<
         { modal: false },  // Non-blocking dialog
         'Download And install',
         'Browse...',
-        "Don't ask again"
+        "Skip"
     );
 
     switch (choice) {
@@ -126,9 +113,8 @@ export async function promptLSPSetup(context: vscode.ExtensionContext): Promise<
             await promptForBinaryPath();
             break;
 
-        case "Don't ask again":
-            log.info('User chose to skip LSP setup permanently');
-            await context.globalState.update(SKIP_LSP_SETUP_KEY, true);
+        case "Skip":
+            log.info('User chose to skip LSP setup');
             break;
 
         default:
@@ -138,7 +124,7 @@ export async function promptLSPSetup(context: vscode.ExtensionContext): Promise<
 }
 
 async function installLSP(context: vscode.ExtensionContext): Promise<void> {
-    const latest = await fetchLatestVersion();
+    const latest = await getLatestReleaseInfo();
     if (!latest) {
         log.error('Could not fetch latest LSP version for installation');
         return;
@@ -170,7 +156,7 @@ async function promptForBinaryPath(): Promise<void> {
 /**
  * Fetch the latest version log.info from the release server.
  */
-async function fetchLatestVersion(): Promise<ReleaseInfo | null> {
+async function getLatestReleaseInfo(): Promise<ReleaseInfo | null> {
     log.info('Fetching C3 LSP releases...');
     const response = await axios.get<ReleasesResponse>(C3_LSP_RELEASES_URL);
     const releases = response.data.releases;

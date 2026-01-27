@@ -1,8 +1,11 @@
 import { Trace } from "vscode-languageserver-protocol";
-import { C3Config, FormatConfig, LSPConfig } from './config'
+import { C3Config, FMTConfig, LSPConfig } from './config'
 
 /** URL to fetch C3 LSP release information */
 export const C3_LSP_RELEASES_URL = 'https://pherrymason.github.io/c3-lsp/releases.json';
+
+/** URL to fetch C3FMT release information */
+export const C3_FMT_RELEASES_URL = 'https://github.com/lmichaudel/c3fmt/releases';
 
 /** Language ID registered for C3 files */
 export const C3_LANGUAGE_ID = 'c3';
@@ -22,9 +25,6 @@ export const LSP_CLIENT_ID = 'c3lsp';
 /** Folder name for storing downloaded LSP binary */
 export const LSP_INSTALL_FOLDER = 'c3lsp';
 
-// Key for storing "don't ask again" preference
-export const SKIP_LSP_SETUP_KEY = 'c3.skipLSPSetup';
-
 export const LSP_FLAGS = {
     C3C_PATH: '-c3c-path',
     DEBUG: '-debug',
@@ -36,6 +36,16 @@ export const LSP_FLAGS = {
     VERSION: '-version',
 } as const;
 
+export const C3C_FLAGS = {
+    VERSION: '--version',
+} as const;
+
+export const FMT_FLAGS = {
+    IN_PLACE: '--in-place',
+    CONFIG_FILE: '--config=',
+    FORCE_DEFAULT: '--default',
+    VERSION: '--version',
+} as const;
 
 //! Defaults in package.json must match with these values
 
@@ -47,7 +57,6 @@ export const DEFAULT_C3_CONFIG: C3Config = {
 export const DEFAULT_LSP_CONFIG: LSPConfig = {
     enabled: true,
     path: undefined,
-    checkForUpdate: true,
     sendCrashReports: false,
     debug: false,
     trace: Trace.Compact,
@@ -56,9 +65,8 @@ export const DEFAULT_LSP_CONFIG: LSPConfig = {
     langVersion: undefined
 } as const;
 
-export const DEFAULT_FORMAT_CONFIG: FormatConfig = {
+export const DEFAULT_FORMAT_CONFIG: FMTConfig = {
     enabled: false,
-    path: 'clang-format',
-    style: 'Microsoft',
-    fallbackStyle: 'LLVM'
+    path: undefined,
+    configPath: undefined
 } as const;

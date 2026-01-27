@@ -1,9 +1,8 @@
 import * as vscode from 'vscode';
 import { spawn, ChildProcess } from 'child_process';
-import { getFormatConfig } from './config';
-import { C3_LANGUAGE_ID } from './constants';
+import { getFMTConfig } from './config';
+import { C3_LANGUAGE_ID, FMT_FLAGS } from './constants';
 import { errorAndShow } from './logger';
-import { error } from 'console';
 
 /**
  * Register the formatting provider with VS Code.
@@ -15,25 +14,31 @@ export function registerFormatter(context: vscode.ExtensionContext): void {
             { language: C3_LANGUAGE_ID, scheme: 'untitled' }, // New unsaved files
         ],
         {
-            provideDocumentFormattingEdits: formatDocument,
+            provideDocumentFormattingEdits: formatDocument
         }
     );
 
     // Register for cleanup when extension deactivates
     context.subscriptions.push(provider);
+
+
 }
 
 /**
- * Format an entire document.
+ * Format an entire document. Registers as a DocumentFormattingEditProvider.
  */
 async function formatDocument(document: vscode.TextDocument): Promise<vscode.TextEdit[]> {
     // Read config fresh (not cached) so user changes apply immediately
-    const config = getFormatConfig();
+    const config = getFMTConfig();
+
+    if (!config.enabled) {
+        return [];
+    }
 
     try {
         const originalText = document.getText();
 
-        const formattedText = await runClangFormat(
+        const formattedText = await runC3FMT(
             originalText,
             document.fileName,
             config.path,
@@ -57,58 +62,27 @@ async function formatDocument(document: vscode.TextDocument): Promise<vscode.Tex
 /**
  * Run clang-format on the given text.
  */
-function runClangFormat(
-    text: string,
-    fileName: string | undefined,
-    formatterPath: string,
-    style: string | undefined,
-    fallbackStyle: string
-): Promise<string> {
+function runC3FMT(fileName: string, path: string, configPath: string | undefined): Promise<string> {
     return new Promise((resolve, reject) => {
         // Build command-line arguments
         const args: string[] = [];
 
-        if (fileName) {
-            // Tell clang-format what file this is (helps it find .clang-format)
-            args.push('-assume-filename', fileName);
+        if (configPath) {
+            args.push(`${FMT_FLAGS.CONFIG_FILE}${configPath}`);
+        } else {
+            args.push(FMT_FLAGS.FORCE_DEFAULT);
         }
 
-        if (style) {
-            args.push(`--style=${style}`);
-        }
+        args.push(FMT_FLAGS.IN_PLACE);
 
-        args.push(`--fallback-style=${fallbackStyle}`);
+
 
         // Spawn the process
-        const proc: ChildProcess = spawn(formatterPath, args);
-
-        // Collect output
-        let stdout = '';
-        let stderr = '';
-
-        proc.stdout?.on('data', (chunk: Buffer) => {
-            stdout += chunk.toString();
-        });
-
-        proc.stderr?.on('data', (chunk: Buffer) => {
-            stderr += chunk.toString();
-        });
-
-        // Handle process errors (e.g., binary not found)
-        proc.on('error', (err) => {
-            reject(new Error(`Failed to run clang-format: ${err.message}`));
-        });
-
-        // Handle process completion
-        proc.on('close', (exitCode) => {
-            if (exitCode !== 0) {
-                reject(new Error(`clang-format exited with code ${exitCode}: ${stderr}`));
-            } else {
-                resolve(stdout);
-            }
-        });
-
-        // Send the text to format via stdin
-        proc.stdin?.end(text);
+        const proc: ChildProcess = spawn(path, args);
     });
+}
+
+async function installOrUpdateFMT(context: vscode.ExtensionContext): Promise<void> {
+    const config = getFMTConfig();
+
 }

@@ -1,8 +1,9 @@
 import * as vscode from 'vscode';
 import * as cp from 'child_process';
 import { restartLSP } from './lsp';
-import { getLSPConfig, getFormatConfig } from './config';
+import { getLSPConfig, getFMTConfig } from './config';
 import { errorAndShow, info, showOutput } from './logger';
+import { C3C_FLAGS, FMT_FLAGS, LSP_FLAGS } from './constants';
 
 /**
  * Register all extension commands.
@@ -27,7 +28,7 @@ export function registerCommands(context: vscode.ExtensionContext): void {
  */
 async function showVersionInfo(): Promise<void> {
     const lspConfig = getLSPConfig();
-    const formatConfig = getFormatConfig();
+    const formatConfig = getFMTConfig();
     const lines: string[] = [];
 
     lines.push('\n=== C3 Extension Info ===');
@@ -35,18 +36,20 @@ async function showVersionInfo(): Promise<void> {
     // LSP info
     lines.push(`\nLSP Path: ${lspConfig.path || 'Not configured'}`);
     if (lspConfig.path) {
-        const lspVersion = getCommandVersion(lspConfig.path, ['-version']);
+        const lspVersion = getCommandVersion(lspConfig.path, [LSP_FLAGS.VERSION]);
         lines.push(`LSP Version: ${lspVersion || 'Not found'}`);
     }
 
     // Check for c3c in PATH
-    const c3cVersion = getCommandVersion('c3c', ['--version']);
+    const c3cVersion = getCommandVersion('c3c', [C3C_FLAGS.VERSION]);
     lines.push(`\nC3C Version: ${c3cVersion || 'Not found'}`);
 
     // Formatter info
-    lines.push(`\nFormatter Path: ${formatConfig.path}`);
-    const formatterVersion = getCommandVersion(formatConfig.path, ['--version']);
-    lines.push(`Formatter Version: ${formatterVersion || 'Not found'}`);
+    lines.push(`\nFormatter Path: ${formatConfig.path || 'Not configured'}`);
+    if (formatConfig.path) {
+        const formatterVersion = getCommandVersion(formatConfig.path, [FMT_FLAGS.VERSION]);
+        lines.push(`Formatter Version: ${formatterVersion || 'Not found'}`);
+    }
 
     info(lines.join('\n'));
     showOutput();

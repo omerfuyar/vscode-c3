@@ -16,7 +16,6 @@ export interface C3Config {
 export interface LSPConfig {
     enabled: boolean;
     path: string | undefined;
-    checkForUpdate: boolean;
     sendCrashReports: boolean;
     debug: boolean;
     trace: Trace;
@@ -28,11 +27,10 @@ export interface LSPConfig {
 /** 
  * Settings for code formatting
  */
-export interface FormatConfig {
+export interface FMTConfig {
     enabled: boolean;
-    path: string;
-    style: string;
-    fallbackStyle: string;
+    path: string | undefined;
+    configPath: string | undefined;
 }
 
 /**
@@ -76,7 +74,6 @@ export function getLSPConfig(): LSPConfig {
     return {
         enabled: config.get<boolean>('enabled', DEFAULT_LSP_CONFIG.enabled),
         path: config.get<string>('path'),
-        checkForUpdate: config.get<boolean>('checkForUpdate', DEFAULT_LSP_CONFIG.checkForUpdate),
         sendCrashReports: config.get<boolean>('sendCrashReports', DEFAULT_LSP_CONFIG.sendCrashReports),
         debug: config.get<boolean>('debug', DEFAULT_LSP_CONFIG.debug),
         trace: parsedTrace,
@@ -89,14 +86,13 @@ export function getLSPConfig(): LSPConfig {
 /**
  * Get fresh formatting-related settings.
  */
-export function getFormatConfig(): FormatConfig {
+export function getFMTConfig(): FMTConfig {
     const config = vscode.workspace.getConfiguration('c3.format');
 
     return {
         enabled: config.get<boolean>('enabled', DEFAULT_FORMAT_CONFIG.enabled),
-        path: config.get<string>('path', DEFAULT_FORMAT_CONFIG.path),
-        style: config.get<string>('style', DEFAULT_FORMAT_CONFIG.style),
-        fallbackStyle: config.get<string>('fallbackStyle', DEFAULT_FORMAT_CONFIG.fallbackStyle),
+        path: config.get<string>('path'),
+        configPath: config.get<string>('configPath'),
     };
 }
 
